@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState} from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { TemplateContextType } from '~/types/TemplateInterfaces';
 
 const TemplateContext = createContext<TemplateContextType | null>(null);
@@ -12,9 +12,18 @@ interface TemplateContextProviderProps {
 export const TemplateContextProvider = ({ children }: TemplateContextProviderProps) => {
   const [activeTemplate, setActiveTemplate] = useState<number>(1);
   const [images, setImages] = useState<string[]>([])
-
+  useEffect(() => {
+    const stored = localStorage.getItem("images");
+    if (stored) {
+      try {
+        setImages(JSON.parse(stored));
+      } catch (err) {
+        console.error("Invalid image data in localStorage");
+      }
+    }
+  }, []);
   return (
-    <TemplateContext.Provider value={{ activeTemplate, setActiveTemplate, images, setImages}}>
+    <TemplateContext.Provider value={{ activeTemplate, setActiveTemplate, images, setImages }}>
       {children}
     </TemplateContext.Provider>
   );

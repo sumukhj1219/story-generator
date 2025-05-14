@@ -11,7 +11,7 @@ const StoryTemplate = () => {
   const selectedTemplate = templates.find((t) => t.id === activeTemplate);
   console.log(activeTemplate)
   return (
-    <div className="flex items-center justify-center h-full">
+    <div className="flex flex-col items-center justify-center h-full">
       <MultiImageUpload />
       {selectedTemplate ? selectedTemplate.template : <p>No template selected</p>}
     </div>

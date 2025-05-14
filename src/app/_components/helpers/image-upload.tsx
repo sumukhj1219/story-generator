@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +18,8 @@ import {
 
 import { Button } from '~/components/ui/button';
 import { ScrollArea } from '~/components/ui/scroll-area';
+import { ImagePlus } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 
 const formSchema = z.object({
   images: z.array(z.string()).min(1, 'Upload at least one image'),
@@ -25,10 +27,14 @@ const formSchema = z.object({
 
 export type MultiImageFormValues = z.infer<typeof formSchema>;
 
-const MultiImageUpload = () => {
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
+type UploadImage = {
+  id: string;
+  url: string;
+  loading: boolean;
+};
 
+const MultiImageUpload = () => {
+  const [images, setImages] = useState<UploadImage[]>([]);
   const form = useForm<MultiImageFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -42,18 +48,33 @@ const MultiImageUpload = () => {
     return { signature, expire, token };
   };
 
-  const handleSuccess = (res: any) => {
+  const onUploadStart = () => {
+    const id = uuidv4();
+    setImages((prev) => [...prev, { id, url: '', loading: true }]);
+    return id;
+  };
+
+  const onSuccess = (res: any) => {
     const url = res.url;
-    setImageUrls((prev) => [...prev, url]);
+    setImages((prev) => {
+      const index = prev.findIndex((img) => img.loading && img.url === '');
+      if (index !== -1) {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], url, loading: false };
+        return updated;
+      }
+      return prev;
+    });
+
     form.setValue('images', [...form.getValues('images'), url]);
   };
 
-  const handleError = (err: any) => {
+  const onError = (err: any) => {
     console.error('ImageKit upload error:', err);
   };
 
   const onSubmit = (values: MultiImageFormValues) => {
-    localStorage.setItem("images",JSON.stringify(imageUrls))
+    localStorage.setItem('images', JSON.stringify(values.images));
     console.log('Submitted images:', values.images);
   };
 
@@ -72,26 +93,41 @@ const MultiImageUpload = () => {
               <FormItem>
                 <FormLabel>Upload Images</FormLabel>
                 <FormControl>
-                  <div className="flex flex-col gap-2">
-                    <IKUpload
-                      fileName="multi-upload.jpg"
-                      folder="/multi-upload"
-                      multiple
-                      useUniqueFileName={true}
-                      isPrivateFile={false}
-                      onSuccess={handleSuccess}
-                      onError={handleError}
-                      className="px-4 py-2 rounded cursor-pointer text-sm"
-                    />
-                    <ScrollArea className="h-32 rounded border p-2">
-                      <div className="grid grid-cols-3 gap-2">
-                        {imageUrls.map((url, i) => (
-                          <img
-                            key={i}
-                            src={url}
-                            alt={`uploaded-${i}`}
-                            className="w-full h-24 object-cover rounded"
-                          />
+                  <div className="flex h-32 flex-col gap-2">
+                    <label className="w-fit cursor-pointer border p-2 rounded-md text-sm flex items-center gap-1">
+                      <ImagePlus className="w-4 h-4" />
+                      Upload
+                      <IKUpload
+                        fileName="multi-upload.jpg"
+                        folder="/multi-upload"
+                        multiple
+                        useUniqueFileName={true}
+                        isPrivateFile={false}
+                        onUploadStart={onUploadStart}
+                        onSuccess={onSuccess}
+                        onError={onError}
+                        className="hidden" 
+                      />
+                    </label>
+
+
+                    <ScrollArea className="h-28 rounded border p-2">
+                      <div className="grid grid-cols-6 gap-2">
+                        {images.map((img) => (
+                          <div
+                            key={img.id}
+                            className="w-16 h-16 rounded-md border bg-white shadow-sm flex items-center justify-center overflow-hidden"
+                          >
+                            {img.loading ? (
+                              <div className="w-5 h-5 animate-spin rounded-full border-2 border-gray-500 border-t-transparent" />
+                            ) : (
+                              <img
+                                src={img.url}
+                                alt="uploaded"
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </div>
                         ))}
                       </div>
                     </ScrollArea>
@@ -102,7 +138,7 @@ const MultiImageUpload = () => {
             )}
           />
 
-          <Button type="submit" disabled={uploading}>
+          <Button type="submit" className="mt-4">
             Submit Images
           </Button>
         </form>
