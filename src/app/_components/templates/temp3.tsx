@@ -8,7 +8,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { DraggableImage } from "../drag-and-drop/DraggableImage";
 import { DroppableCell } from "../drag-and-drop/DroppableCell";
 
-export function Temp1() {
+export function Temp3() {
   const { images } = useTemplateContext();
 
   const [cellContents, setCellContents] = useState<(number | null)[]>([
@@ -21,8 +21,8 @@ export function Temp1() {
 
     const activeId = String(active.id);
     const overId = String(over.id);
-
     if (activeId === overId) return;
+
     if (!activeId.startsWith("image-") || !overId.startsWith("cell-")) return;
 
     const draggedImageIndex = Number(activeId.replace("image-", ""));
@@ -33,19 +33,27 @@ export function Temp1() {
 
     setCellContents((prev) => {
       const newContents = [...prev];
-      [newContents[draggedImageCellIndex], newContents[targetCellIndex]] = [newContents[targetCellIndex], newContents[draggedImageCellIndex]];
+      [newContents[draggedImageCellIndex], newContents[targetCellIndex]] = [
+        newContents[targetCellIndex],
+        newContents[draggedImageCellIndex],
+      ];
       return newContents;
     });
   };
 
   const layoutClasses = [
-    "col-span-2 row-span-2",
-    "col-span-1 row-span-2",
-    "col-span-1 row-span-4",
-    "col-span-2 row-span-2",
-    "col-span-2 row-span-2",
-    "col-span-1 row-span-2",
+    "col-span-1 row-span-2 rotate-10",   // 0
+    "col-span-2 row-span-2",   // 1
+    "col-span-1 row-span-2",   // 2
+    "col-span-1 row-span-1",   // 3
+    "col-span-1 row-span-1",   // 4
+    "col-span-2 row-span-2",   // 5
   ];
+
+  const getImageForCell = (cellIndex: number) => {
+    const imgIndex = cellContents[cellIndex];
+    return imgIndex !== null && imgIndex !== undefined ? images[imgIndex] ?? null : null;
+  };
 
   return (
     <Card className="w-[250px] h-[300px] overflow-hidden bg-neutral-800">
@@ -62,7 +70,7 @@ export function Temp1() {
                   <DraggableImage
                     id={`image-${imgIndex}`}
                     index={imgIndex}
-                    image={images[imgIndex]}
+                    image={getImageForCell(cellIdx)}
                   />
                 ) : (
                   <span className="text-center text-sm text-gray-500">Empty</span>
